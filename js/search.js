@@ -1,7 +1,11 @@
 jQuery(document).ready(function($) {
 	
 	$('#find-shortcode #search-button').on('click', function(e) {
+		var $btn = $(this);
+		
 		e.preventDefault();
+		
+		$btn.prop('disabled', true);
 		
 		var data={
 			'action' : 'find_shortcode',
@@ -9,7 +13,9 @@ jQuery(document).ready(function($) {
 		};
 
 		$.post(ajaxurl, data, function(response) {
-			$('#find-shortcode-results').html(response);		
+			$('#find-shortcode-results').html(response);
+			
+			$btn.prop('disabled', false);		
 		});
 	});
 	
