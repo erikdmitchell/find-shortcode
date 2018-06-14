@@ -21,6 +21,8 @@ define('FIND_SHORTCODE_PATH', plugin_dir_path(__FILE__));
 define('FIND_SHORTCODE_URL', plugin_dir_url(__FILE__));
 
 class Find_Shortcode {
+    
+    public $version = '0.1.0';
 	
 	public function __construct() {
 		add_action('admin_enqueue_scripts', array($this, 'admin_scripts_styles'));
@@ -29,7 +31,9 @@ class Find_Shortcode {
 	}
 	
 	public function admin_scripts_styles() {
-		wp_enqueue_script('find-shortcode-search-script', FIND_SHORTCODE_URL.'js/search.js', array('jquery'), '0.1.0', true);
+		wp_enqueue_script('find-shortcode-search-script', FIND_SHORTCODE_URL.'js/search.js', array('jquery'), $this->version, true);
+		
+		wp_enqueue_style('find-shortcode-css', FIND_SHORTCODE_URL.'css/admin.css', '', $this->version);
 	}
 	
 	public function add_menu_page() {
@@ -54,6 +58,14 @@ class Find_Shortcode {
 								<p class="description">Enter shortcode slug with no '[]' or attributes</p>
 							</td>
 						</tr>
+
+						<tr>
+							<th scope="row"><label for="list-shortcodes">List Shortcodes</label></th>
+							<td>
+								<label for="list-all-shortcodes"><input type="checkbox" name="list-all-shortcodes" id="list-all-shortcodes">List All Shortcodes</label>
+								<p class="description">This will list all shortcodes and their pages. It overrides the specific search above.</p>
+							</td>
+						</tr>
 						
 					</tbody>
 				</table>
@@ -72,14 +84,18 @@ class Find_Shortcode {
 	}
 
 	public function ajax_find_shortcode() {
-		$return=$this->find_shortcode($_POST['term']);
+    	if (isset($_POST['term']) && '' != $_POST['term'] ) :
+    		$return = $this->find_shortcode($_POST['term']);
+        else :
+            $return = $this->list_all_shortcodes();
+        endif;
 
 		echo $return;
 		
 		wp_die();
 	}
 
-	public function find_shortcode($string='') { 
+	protected function find_shortcode($string='') { 
 		$html='';
 		$list='';
 		$get_post_types=get_post_types();
@@ -90,36 +106,22 @@ class Find_Shortcode {
 		foreach ($get_post_types as $post_type) :
 			$post_types[]=$post_type;
 		endforeach;
-//print_r($post_types);		
+		
 		$posts=get_posts(array(
 			'posts_per_page' => -1,
 			'post_type' => $post_types
 		));
-//print_r($posts);  
+ 
 		if (empty($posts))
         	return '';
 
 		$list.='<ul>';
 
 			foreach ($posts as $post) :
-//if ($post->ID == 3117)			
-    //print_r($post->post_content);	
-    
-    if ( preg_match_all( '/'. $shortcode_pattern .'/s', $post->post_content, $matches ) && array_key_exists( 2, $matches ) && in_array( $string, $matches[2] ) ) :
-echo '<pre>';
-print_r($matches);    
-echo 
-        $list.='<li><a href="'.get_permalink($post->ID).'" target="_blank">'.$post->post_title.'</a></li>'; 
-        $counter++;
-    endif;    		
-    
-		        // check the post content for the short code
-/*
-				if (stripos($post->post_content, '['.$string)) :
-					$list.='<li><a href="'.get_permalink($post->ID).'" target="_blank">'.$post->post_title.'</a></li>'; 
-					$counter++; 
-				endif;  
-*/        
+                if ( preg_match_all( '/'. $shortcode_pattern .'/s', $post->post_content, $matches ) && array_key_exists( 2, $matches ) && in_array( $string, $matches[2] ) ) :
+                    $list.='<li><a href="'.get_permalink($post->ID).'" target="_blank">'.$post->post_title.'</a></li>'; 
+                    $counter++;
+                endif;    		        
 			endforeach;
 		
 		$list.='</ul>';
@@ -131,6 +133,58 @@ echo
 	
 		return $html;
 	}	
+
+	protected function list_all_shortcodes() { 
+		$html='';
+		$list='';
+		$get_post_types=get_post_types();
+		$post_types=array();
+        $shortcode_pattern = get_shortcode_regex();
+		
+		foreach ($get_post_types as $post_type) :
+			$post_types[]=$post_type;
+		endforeach;
+		
+		$posts=get_posts(array(
+			'posts_per_page' => -1,
+			'post_type' => $post_types
+		));
+ 
+		if (empty($posts))
+        	return '';
+
+		$list.='<ul class="all-shortcodes-list">';
+
+			foreach ($posts as $post) :
+                if ( preg_match_all( '/'. $shortcode_pattern .'/s', $post->post_content, $matches ) && array_key_exists( 2, $matches ) ) :
+                    $shortcodes = array_unique($matches[2]);
+
+                    $list.='<li class="post-page">';
+                        $list .= '<a href="'.get_permalink($post->ID).'" target="_blank">';
+                            $list .= $post->post_title;
+                        $list .= '</a>';
+                            
+                        $list .= '<ul class="shortcodes-list">';
+                            foreach ($shortcodes as $shortcode) :
+                                $list .= '<li class="shortcode">'.$shortcode.'</li>';
+                            endforeach;
+                        $list .= '</ul>';
+                            
+                    $list .= '</li>'; 
+                    $counter++;
+                endif;   
+                		        
+			endforeach;
+		
+		$list.='</ul>';
+
+        $html.='<p>';
+        	$html.='<b>Found '.$counter.' posts/pages</b>';
+        	$html.=$list;
+        $html.='</p>';
+	
+		return $html;
+	}
 	
 }
 
