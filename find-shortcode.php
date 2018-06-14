@@ -85,27 +85,41 @@ class Find_Shortcode {
 		$get_post_types=get_post_types();
 		$post_types=array();
 		$counter=0;
+        $shortcode_pattern = get_shortcode_regex();
 		
 		foreach ($get_post_types as $post_type) :
 			$post_types[]=$post_type;
 		endforeach;
-		
+//print_r($post_types);		
 		$posts=get_posts(array(
 			'posts_per_page' => -1,
 			'post_type' => $post_types
 		));
-  
+//print_r($posts);  
 		if (empty($posts))
         	return '';
 
 		$list.='<ul>';
 
 			foreach ($posts as $post) :
+//if ($post->ID == 3117)			
+    //print_r($post->post_content);	
+    
+    if ( preg_match_all( '/'. $shortcode_pattern .'/s', $post->post_content, $matches ) && array_key_exists( 2, $matches ) && in_array( $string, $matches[2] ) ) :
+echo '<pre>';
+print_r($matches);    
+echo 
+        $list.='<li><a href="'.get_permalink($post->ID).'" target="_blank">'.$post->post_title.'</a></li>'; 
+        $counter++;
+    endif;    		
+    
 		        // check the post content for the short code
+/*
 				if (stripos($post->post_content, '['.$string)) :
 					$list.='<li><a href="'.get_permalink($post->ID).'" target="_blank">'.$post->post_title.'</a></li>'; 
 					$counter++; 
-				endif;          
+				endif;  
+*/        
 			endforeach;
 		
 		$list.='</ul>';
