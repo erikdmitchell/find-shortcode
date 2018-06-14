@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define('FIND_SHORTCODE_PATH', plugin_dir_path(__FILE__));
 define('FIND_SHORTCODE_URL', plugin_dir_url(__FILE__));
 
-class FindShortcode {
+class Find_Shortcode {
 	
 	public function __construct() {
 		add_action('admin_enqueue_scripts', array($this, 'admin_scripts_styles'));
@@ -59,7 +59,7 @@ class FindShortcode {
 				</table>
 				
 				<p class="submit">
-					<input type="button" name="button" id="search-button" class="button button-primary" value="Search">
+					<input type="submit" name="submit" id="search-button" class="button button-primary" value="Search">
 				</p>
 				
 			</form>
@@ -120,5 +120,4 @@ class FindShortcode {
 	
 }
 
-new FindShortcode();
-?>
+new Find_Shortcode();
